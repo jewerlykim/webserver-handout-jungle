@@ -22,7 +22,6 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    printf("oh tae yang!!");
 
     listenfd = Open_listenfd(argv[1]);
     while (1)
