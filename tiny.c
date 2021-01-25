@@ -122,7 +122,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs){
         else 
             strcpy(cgiargs, "");
         
-        strcpy(filename, '.');
+        strcpy(filename, ".");
         strcat(filename, uri);
         return 0;
     }
