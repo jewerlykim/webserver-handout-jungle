@@ -15,16 +15,18 @@ int main(int argc, char **argv)
     socklen_t clientlen;
     struct sockaddr_storage clientaddr;
 
-    if (argc != 2) {
+    if (argc != 2)
+    {
         fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(1);
     }
-    
+
     listenfd = Open_listenfd(argv[1]);
-    while(1) {
+    while (1)
+    {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
-        Getnameinfo((SA *) &clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
+        Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
 
         printf("Accepted connection from (%s, %s)\n", hostname, port);
         doit(connfd);
@@ -33,7 +35,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-void doit(int fd) 
+void doit(int fd)
 {
     int is_static;
     struct stat sbuf;
@@ -46,27 +48,33 @@ void doit(int fd)
     printf("Request headers\n");
     printf("%s", buf);
     sscanf(buf, "%s %s %s", method, uri, version);
-    if (strcasecmp(method, "GET")){
+    if (strcasecmp(method, "GET"))
+    {
         clienterror(fd, method, "501", "Not Implemented", "Tiny does not implement this method");
         return;
     }
     read_requesthdrs(&rio);
 
     is_static = parse_uri(uri, filename, cgiargs);
-    if (stat(filename, &sbuf) < 0) {
+    if (stat(filename, &sbuf) < 0)
+    {
         clienterror(fd, filename, "404", "Not Fount", "Tiny couldn't find this file");
         return;
     }
 
-    if (is_static) {
-        if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode)) {
+    if (is_static)
+    {
+        if (!(S_ISREG(sbuf.st_mode)) || !(S_IRUSR & sbuf.st_mode))
+        {
             clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
             return;
         }
         serve_static(fd, filename, sbuf.st_size);
     }
-    else {
-        if(!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode)) {
+    else
+    {
+        if (!(S_ISREG(sbuf.st_mode)) || !(S_IXUSR & sbuf.st_mode))
+        {
             clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
             return;
         }
@@ -74,10 +82,14 @@ void doit(int fd)
     }
 }
 
-void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char*longmsg) {
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg)
+{
     char buf[MAXLINE], body[MAXBUF];
     sprintf(body, "<html><title>Tiny Error</title>");
-    sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
+    sprintf(body, "%s<body bgcolor="
+                  "ffffff"
+                  ">\r\n",
+            body);
     sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
     sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
     sprintf(body, "%s<hr><em>The Tiny Web server</em>\r\n", body);
@@ -91,44 +103,51 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char*longmsg
     Rio_writen(fd, body, strlen(body));
 }
 
-void read_requesthdrs(rio_t *rp) {
+void read_requesthdrs(rio_t *rp)
+{
     char buf[MAXLINE];
 
     Rio_readlineb(rp, buf, MAXLINE);
-    while(strcmp(buf, "\r\n")) {
+    while (strcmp(buf, "\r\n"))
+    {
         Rio_readlineb(rp, buf, MAXLINE);
         printf("%s", buf);
     }
     return;
 }
 
-int parse_uri(char *uri, char *filename, char *cgiargs){ 
+int parse_uri(char *uri, char *filename, char *cgiargs)
+{
     char *ptr;
 
-    if(!strstr(uri, "cgi-bin")) {
+    if (!strstr(uri, "cgi-bin"))
+    {
         strcpy(cgiargs, "");
         strcpy(filename, ".");
         strcat(filename, uri);
-        if(uri[strlen(uri) - 1] == '/')
+        if (uri[strlen(uri) - 1] == '/')
             strcat(filename, "home.html");
         return 1;
     }
-    else {
+    else
+    {
         ptr = index(uri, '?');
-        if(ptr) {
+        if (ptr)
+        {
             strcpy(cgiargs, ptr + 1);
             *ptr = '\0';
         }
-        else 
+        else
             strcpy(cgiargs, "");
-        
+
         strcpy(filename, ".");
         strcat(filename, uri);
         return 0;
     }
 }
 
-void serve_static(int fd, char *filename, int filesize) {
+void serve_static(int fd, char *filename, int filesize)
+{
     int srcfd;
     char *srcp, filetype[MAXLINE], buf[MAXBUF];
 
@@ -149,15 +168,17 @@ void serve_static(int fd, char *filename, int filesize) {
     Munmap(srcp, filesize);
 }
 
-void serve_dynamic(int fd, char *filename, char *cgiargs) {
-    char buf[MAXLINE], *emptylist[] = { NULL };
+void serve_dynamic(int fd, char *filename, char *cgiargs)
+{
+    char buf[MAXLINE], *emptylist[] = {NULL};
 
     sprintf(buf, "HTTP/1.0 200 OK\r\n");
     Rio_writen(fd, buf, strlen(buf));
     sprintf(buf, "Server: Tiny Web Server\r\n");
     Rio_writen(fd, buf, strlen(buf));
 
-    if(Fork() == 0) {
+    if (Fork() == 0)
+    {
         setenv("QUERY_STRING", cgiargs, 1);
         Dup2(fd, STDOUT_FILENO);
         Execve(filename, emptylist, environ);
@@ -165,12 +186,20 @@ void serve_dynamic(int fd, char *filename, char *cgiargs) {
     Wait(NULL);
 }
 
-void get_filetype(char *filename, char *filetype) {
-    if (strstr(filename, ".html")) strcpy(filetype, "text/html");
-    else if (strstr(filename, ".gif")) strcpy(filetype, "image/gif");
-    else if (strstr(filename, ".png")) strcpy(filetype, "image/png");
-    else if (strstr(filename, ".mpeg")) strcpy(filetype, "video/mpeg");
-    else if (strstr(filename, ".mp4")) strcpy(filetype, "video/mp4");
-    else if (strstr(filename, ".jpg")) strcpy(filetype, "image/jpeg");
-    else strcpy(filetype, "text/plain");
+void get_filetype(char *filename, char *filetype)
+{
+    if (strstr(filename, ".html"))
+        strcpy(filetype, "text/html");
+    else if (strstr(filename, ".gif"))
+        strcpy(filetype, "image/gif");
+    else if (strstr(filename, ".png"))
+        strcpy(filetype, "image/png");
+    else if (strstr(filename, ".mpeg"))
+        strcpy(filetype, "video/mpeg");
+    else if (strstr(filename, ".mp4"))
+        strcpy(filetype, "video/mp4");
+    else if (strstr(filename, ".jpg"))
+        strcpy(filetype, "image/jpeg");
+    else
+        strcpy(filetype, "text/plain");
 }

@@ -1,7 +1,18 @@
 <html>
-<head><title>test</title></head>
+<head>
+<meta charset = "utf-8" />
+<title>My Tiny Webserver</title>
+</head>
+
 <body> 
-<video controls autoplay loop src="happy2.mp4">
+<video controls autoplay loop src="happy2.mp4"></video>
 Dave O'Hallaron
+
+<form action="/cgi-bin/adder" method="GET">
+  <p>first number: <input type="text" name="first"/></p>
+  <p>second number: <input type="text" name="second"/></p>
+  <input type="submit" value="Submit"/>
+</form>
+
 </body>
 </html>

@@ -22,14 +22,12 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-
     listenfd = Open_listenfd(argv[1]);
     while (1)
     {
         clientlen = sizeof(clientaddr);
         connfd = Accept(listenfd, (SA *)&clientaddr, &clientlen);
         Getnameinfo((SA *)&clientaddr, clientlen, hostname, MAXLINE, port, MAXLINE, 0);
-
         printf("Accepted connection from (%s, %s)\n", hostname, port);
         echo(connfd); // doit 대신 echo 호출
         Close(connfd);
